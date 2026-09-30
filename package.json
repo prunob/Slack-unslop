@@ -1,0 +1,14 @@
+{
+  "name": "slack-unslop",
+  "version": "0.1.1",
+  "private": true,
+  "description": "Display Slack profile full names instead of nicknames in Chrome.",
+  "license": "MIT",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "build": "node scripts/build.cjs",
+    "test": "node tests/core.test.cjs && node --test tests/startup.test.cjs",
+    "test:browser": "node tests/server.cjs",
+    "package": "node scripts/build.cjs && python3 scripts/package.py"
+  }
+}
