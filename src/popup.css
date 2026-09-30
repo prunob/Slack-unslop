@@ -1,0 +1,27 @@
+:root { color-scheme: light; font: 13px/1.5 system-ui, sans-serif; color: #1d2433; background: #f7f8fb; }
+* { box-sizing: border-box; }
+body { width: 370px; margin: 0; padding: 22px; }
+header { display: flex; gap: 12px; align-items: center; margin-bottom: 22px; }
+.mark { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 14px; color: white; background: #513f8c; font-size: 27px; font-weight: 650; }
+h1 { font-size: 20px; letter-spacing: -.5px; margin: 0; }
+header p { margin: 0; color: #5d6576; font-size: 12px; }
+.toggle { display: flex; justify-content: space-between; align-items: center; gap: 12px; font-weight: 600; }
+.toggle input { accent-color: #513f8c; width: 18px; height: 18px; }
+.summary { display: grid; gap: 3px; background: white; border: 1px solid #e1e4ed; border-radius: 12px; padding: 13px; margin-top: 16px; }
+.summary span { font-size: 12px; color: #5d6576; }
+.tip,.hint { font-size: 12px; color: #5d6576; }
+details { border-top: 1px solid #dee2eb; padding: 12px 0; }
+summary { cursor: pointer; font-weight: 600; }
+form { display: grid; gap: 10px; margin-top: 14px; }
+form label { display: block; font-size: 12px; font-weight: 600; }
+input:not([type="checkbox"]),select { display: block; width: 100%; padding: 9px 10px; border: 1px solid #cbd1df; border-radius: 7px; background: white; color: inherit; font: inherit; margin-top: 4px; }
+input:focus,select:focus,button:focus-visible,summary:focus-visible { outline: 2px solid #8674bb; outline-offset: 2px; }
+.optional { font-weight: 400; color: #687183; }
+button { background: #513f8c; color: white; border: 0; border-radius: 8px; padding: 10px; cursor: pointer; font: 600 13px system-ui; }
+button:disabled { opacity: .5; cursor: default; }
+form .hint { margin: 0; font-weight: 400; }
+.file { font-size: 12px; font-weight: 600; }
+code { font-size: 11px; overflow-wrap: anywhere; }
+#status { font-size: 12px; min-height: 18px; margin: 4px 0 12px; color: #385c49; }
+#status.error { color: #a62e36; }
+footer { border-top: 1px solid #dee2eb; padding-top: 12px; font-size: 11px; text-align: center; color: #687183; }
