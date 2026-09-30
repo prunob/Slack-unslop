@@ -1,0 +1,24 @@
+{
+  "manifest_version": 3,
+  "name": "slack-unslop",
+  "version": "0.1.1",
+  "minimum_chrome_version": "111",
+  "description": "Affiche les noms complets des profils Slack dans les auteurs et les @mentions, localement.",
+  "permissions": ["storage", "activeTab"],
+  "background": { "service_worker": "worker.js" },
+  "action": { "default_popup": "popup.html", "default_title": "slack-unslop" },
+  "content_scripts": [
+    {
+      "matches": ["https://app.slack.com/*", "https://*.slack.com/*"],
+      "js": ["content.js"],
+      "run_at": "document_start",
+      "world": "ISOLATED"
+    },
+    {
+      "matches": ["https://app.slack.com/*", "https://*.slack.com/*"],
+      "js": ["bridge.js"],
+      "run_at": "document_start",
+      "world": "MAIN"
+    }
+  ]
+}
