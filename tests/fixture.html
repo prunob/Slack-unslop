@@ -1,0 +1,69 @@
+<!doctype html><html lang="fr"><meta charset="utf-8"><title>Validation — Slack Vrais noms</title>
+<style>body{font:16px system-ui;max-width:850px;margin:40px auto;line-height:1.7}.pass{color:#17693c}.fail{color:#b22}#messages{border:1px solid #ddd;padding:20px}button{font:inherit}.c-member_slug{color:#1264a3;background:#e8f0fb}</style>
+<h1>Validation automatique de l’extension</h1><p>Discussion simulée — données fictives uniquement.</p>
+<div id="messages">
+<button id="author-a" data-message-sender="UTEST00001" data-qa="message_sender_name">dragon42</button>
+<p>Hello <a id="mention-a" class="c-member_slug" data-member-id="UTEST00001" href="slack://user?team=TTEST00001&id=UTEST00001">@dragon42</a>.</p>
+<button id="author-b" data-message-sender="UTEST00002" data-qa="message_sender_name">dragon42</button>
+<p><a id="mention-b" class="c-member_slug" data-member-id="UTEST00002">@dragon42</a></p>
+<p><span id="stringify" class="c-member_slug" data-stringify-type="mention" data-stringify-id="UTEST00001">@dragon42</span></p>
+<p><span id="ambiguous" class="c-member_slug">@dragon42</span> (pseudo ambigu sans identifiant)</p>
+<p><span id="broadcast" class="c-member_slug">@here</span></p>
+<p><span id="group" class="c-member_slug" data-usergroup-id="S00000000">@dragon42</span></p>
+<pre><span id="code" class="c-member_slug" data-member-id="UTEST00001">@dragon42</span></pre>
+<div contenteditable="true" role="textbox"><span id="editor" class="c-member_slug" data-member-id="UTEST00001">@dragon42</span></div>
+</div><h2>Résultats</h2><ol id="results"></ol><p id="final">En cours…</p>
+<script>
+const listeners=[]; const handlers=[]; const stored={};
+globalThis.chrome={
+ runtime:{id:'fixture-extension',onMessage:{addListener:f=>handlers.push(f)},sendMessage:message=>new Promise(resolve=>{for(const h of handlers)h(message,{id:'fixture-extension',tab:{id:1}},resolve);})},
+ storage:{onChanged:{addListener:f=>listeners.push(f)},local:{
+ get:async keys=>Object.fromEntries((Array.isArray(keys)?keys:[keys]).map(k=>[k,structuredClone(stored[k])])),
+ set:async values=>{const changes={};for(const [k,v] of Object.entries(values)){changes[k]={oldValue:structuredClone(stored[k]),newValue:structuredClone(v)};stored[k]=structuredClone(v);}for(const f of listeners)f(changes,'local');}
+ }}}
+globalThis.importScripts=()=>{};
+</script>
+<script src="/extension/core.js"></script><script src="/extension/worker.js"></script>
+<script>delete globalThis.__SVNCore;</script>
+<script src="/extension/content.js"></script><script src="/extension/bridge.js"></script>
+<script>
+(async()=>{
+let passed=0;const results=document.getElementById('results');
+const wait=ms=>new Promise(r=>setTimeout(r,ms));
+const get=id=>document.getElementById(id);
+async function until(condition){const start=Date.now();while(!condition()){if(Date.now()-start>15000)throw Error('Délai dépassé');await wait(50);}}
+function test(name,condition){const li=document.createElement('li');li.textContent=(condition?'PASS — ':'FAIL — ')+name;li.className=condition?'pass':'fail';results.append(li);if(!condition)throw Error(name);passed++;}
+try{
+test('Scripts autonomes : aucun helper partagé dans la page',globalThis.__SVNCore===undefined);
+// Slack application traffic exposes auth; the extension resolves all visible users itself.
+await fetch(new Request(location.origin+'/api/client.counts',{method:'POST',body:new URLSearchParams({token:'xoxc-fixture-token',team_id:'TTEST00001'})}));
+await until(()=>get('mention-b').textContent==='@Marc Martin');
+test('Auteurs et mentions résolus sans survol ni action manuelle',get('author-a').textContent==='Marie Dupont'&&get('mention-a').textContent==='@Marie Dupont'&&get('author-b').textContent==='Marc Martin');
+test('La mention garde exactement son lien et son identifiant',get('mention-a').getAttribute('href')==='slack://user?team=TTEST00001&id=UTEST00001'&&get('mention-a').getAttribute('data-member-id')==='UTEST00001');
+test('Mentions portant un identifiant de sérialisation reconnues',get('stringify').textContent==='@Marie Dupont');
+test('Un pseudo partagé ne choisit pas la mauvaise personne',get('ambiguous').textContent==='@dragon42');
+test('Mentions collectives, groupes, code et composeur intacts',['broadcast','group','code','editor'].map(id=>get(id).textContent).join('|')==='@here|@dragon42|@dragon42|@dragon42');
+await until(()=>stored['directory:TTEST00001']?.UTEST00002);
+test('Le jeton de session ne figure pas dans le stockage',!JSON.stringify(stored).includes('xoxc-')&&!JSON.stringify(stored).includes('token'));
+// React can reuse a text node for another author.
+get('author-a').setAttribute('data-message-sender','UTEST00002');get('author-a').textContent='dragon42';
+await until(()=>get('author-a').textContent==='Marc Martin');
+test('Un élément recyclé garde le bon nom',get('author-a').textContent==='Marc Martin');
+await chrome.storage.local.set({enabled:false});
+await until(()=>get('mention-a').textContent==='@dragon42');
+test('Désactivation : retour immédiat aux pseudos',get('author-b').textContent==='dragon42');
+await chrome.storage.local.set({enabled:true});await until(()=>get('mention-a').textContent==='@Marie Dupont');
+test('Réactivation : noms connus restaurés',get('mention-a').textContent==='@Marie Dupont');
+// Concurrent writes from different tabs are serialized by the actual worker.
+await Promise.all([chrome.runtime.sendMessage({type:'save-profiles',team:'TTEST00001',records:[{id:'UTEST00003',fullName:'Clara Durand',aliases:['clara']}]}),chrome.runtime.sendMessage({type:'save-profiles',team:'TTEST00001',records:[{id:'UTEST00004',fullName:'David Leroy',aliases:['david']}]})]);
+test('Deux écritures simultanées conservent tous les profils',!!stored['directory:TTEST00001'].UTEST00003&&!!stored['directory:TTEST00001'].UTEST00004);
+await new Promise(resolve=>handlers[0]({type:'save-profiles',team:'TTEST00001',manual:true,records:[{id:'UTEST00001',fullName:'Marie Corrigée',aliases:['dragon42']}]},{id:'fixture-extension'},resolve));
+await chrome.runtime.sendMessage({type:'save-profiles',team:'TTEST00001',records:[{id:'UTEST00001',fullName:'Marie Écrasée',aliases:['dragon42']}]});
+test('Une correction manuelle garde la priorité',stored['directory:TTEST00001'].UTEST00001.fullName==='Marie Corrigée');
+history.pushState({},'', '/client/TTEST00002/CTEST00002');
+await until(()=>get('mention-a').textContent==='@dragon42');
+test('Changer d’espace ne réutilise pas les noms de l’autre espace',get('mention-b').textContent==='@dragon42');
+get('final').textContent=`TERMINÉ — ${passed} tests navigateur réussis.`;get('final').className='pass';
+}catch(e){get('final').textContent='ÉCHEC — '+e.message;get('final').className='fail';}
+})();
+</script></html>
